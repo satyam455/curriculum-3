@@ -60,10 +60,15 @@ impl UserRole {
 pub struct VotinConfig {
     pub authority: Pubkey,
     pub total_proposals: u64,
+    pub total_users: u64,
     pub voting_start_time: i64,
     pub voting_end_time: i64,
     pub is_paused: bool,
     pub bump: u8,
+}
+
+impl VotingConfig {
+    pub const SIZE: usize = 8 + 32 + 8 + 8 + 8 + 8 + 1 + 1  // why 8 added first??
 }
 
 
@@ -72,7 +77,12 @@ pub struct UserAccount {
     pub authority: Pubkey,
     pub role: UserRole,
     pub voting_power: u64,
+    pub proposal_created: u64
     pub bump: u8,
+}
+
+impl UserAccount {
+    pub const SIZE: usize = 8 + 32 + 1 + 8 + 8 + 8 + 1; // why 8 added first??
 }
 
 #[account]
@@ -80,10 +90,17 @@ pub struct Proposal {
     pub creator: Pubkey,
     pub proposal_id: u64,
     pub title: String,
+    pub description: String,
     pub votes_for: u64,
     pub votes_against: u64,
+    pub created_at: u64,
     pub status: ProposalStatus,
     pub bump: u8,
+}
+
+impl Proposal {
+    pub const SIZE: usize = 8 + 32 + 8 + (4 + MAX_TITLE_LENGTH) + (4 + MAX_DESCRIPTION_LENGTH) +
+                            8 + 8 + 8 + 1 + 1; // why 8 added at front?
 }
 
 #[account]
@@ -91,7 +108,26 @@ pub struct VoteRecord {
     pub voter: Pubkey,
     pub proposal: Pubkey,
     pub vote_option: u8,
+    pub voting_power_used: u64,
     pub bump: u8,
+}
+
+impl VoteRecord {
+    pub const SIZE: usize  = 8 + 32 + 32 + 1 + 8 +  1; // why 8 addded ata front?
+}
+
+
+#[account]
+pub struct Resource {
+    pub owner: Pubkey,
+    pub name: String,
+    pub value: u64,
+    pub is_locked: bool,
+    pub bump: u8,
+}
+
+impl Resource {
+    pub const SIZE: usize = 8 + 32 + 4 + 8 + 1 + 1; 
 }
 
 
