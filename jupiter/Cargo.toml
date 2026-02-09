@@ -1,0 +1,26 @@
+[package]
+name = "jupiter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Pinned to avoid edition2024 requirement (Rust 1.78 compatibility)
+base64ct = "=1.6.0"
+blake3 = "=1.6.1"
+constant_time_eq = "^0.3"
+time-core = "=0.1.2"
+# 1. To make HTTP requests to Jupiter
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+# 2. To work with JSON data
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# 3. To talk to Solana (RPC & Transactions)
+solana-sdk = "1.18"
+solana-client = "1.18"
+solana-transaction-status = "1.18"
+# 4. Asynchronous runtime (needed for web requests)
+tokio = { version = "1.35", features = ["full"] }
+# 5. Environment variables (.env)
+dotenv = "0.15"
+# 6. Error handling (makes errors easier to write)
+anyhow = "1.0"
