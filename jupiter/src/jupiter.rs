@@ -1,8 +1,15 @@
 use reqwest::Client;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use solana_sdk::transaction::VersionedTransaction;
+use solana_client::rpc_client::RpcClient;
+use solana_sdk::signer::{Signer, keypair::Keypair};
+use solana_sdk::commitment_config::CommitmentConfig;
+use base64::Engine;
+use std::env;
+ // You might need to add `base64` to Cargo.toml imports if using newer version
 pub struct JupiterClient {
     pub http: Client,
     pub base_url: String,
@@ -47,6 +54,51 @@ impl JupiterClient {
 
         Ok(quote)
     }
+
+        pub async fn get_swap_tx(&self, quote: &QuoteResponse, user_pubkey: &str) -> Result<VersionedTransaction, anyhow::Error> {
+        let url = format!("{}/swap", self.base_url);
+        
+        // Payload to send to Jupiter
+        let body = serde_json::json!({
+            "quoteResponse": quote,
+            "userPublicKey": user_pubkey,
+            "wrapAndUnwrapSol": true
+        });
+
+        // make request
+        let resp = self.http.post(&url).json(&body).send().await?;
+        let json: serde_json::Value = resp.json().await?;
+        
+        // Decode the base64 transaction string
+        let swap_tx_base64 = json["swapTransaction"].as_str().unwrap();
+        let tx_bytes = base64::engine::general_purpose::STANDARD.decode(swap_tx_base64)?;
+        
+        // Deserialize into a Solana Transaction object
+        let tx: VersionedTransaction = bincode::deserialize(&tx_bytes)?;
+        
+        Ok(tx)
+    }
+
+        pub async fn execute_swap(&self, keypair: &Keypair, tx: VersionedTransaction) -> Result<String, anyhow::Error> {
+        // Connect to Solana RPC
+        let rpc_url = env::var("SOLANA_RPC_URL").unwrap();
+        let rpc = RpcClient::new_with_commitment(rpc_url, CommitmentConfig::confirmed());
+        
+        // Sign the transaction
+        let mut signed_tx = tx;
+        let latest_blockhash = rpc.get_latest_blockhash()?;
+        
+        // We act as the payer and signer
+        signed_tx.message.set_recent_blockhash(latest_blockhash);
+        let signature = keypair.sign_message(&signed_tx.message.serialize());
+        signed_tx.signatures[0] = signature;
+
+        // Send it!
+        let signature = rpc.send_and_confirm_transaction(&signed_tx)?;
+        Ok(signature.to_string())
+    }
+
+
 }
 
 
@@ -60,7 +112,7 @@ pub struct PriceData {
     pub price_change24h: f64,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct QuoteResponse {
     #[serde(rename = "inputMint")]
     pub input_mint: String,

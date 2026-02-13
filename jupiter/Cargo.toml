@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 # Pinned to avoid edition2024 requirement (Rust 1.78 compatibility)
-base64ct = "=1.6.0"
+base64 = "0.22"
 blake3 = "=1.6.1"
 constant_time_eq = "^0.3"
 time-core = "=0.1.2"
@@ -24,3 +24,4 @@ tokio = { version = "1.35", features = ["full"] }
 dotenv = "0.15"
 # 6. Error handling (makes errors easier to write)
 anyhow = "1.0"
+bincode = "1.3"
